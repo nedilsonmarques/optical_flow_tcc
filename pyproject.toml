@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "optical_flow_tcc"
+version = "0.1.0"
+description = "Sistema de controle para montagem equatorial com análise de fluxo ótico"
+authors = [
+    {name = "Nedilson Aparecido Marques",email = "nedilsonmarques@gmail.com"}
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+opencv-python = "^4.5.5"
+numpy = "^1.22.0"
+matplotlib = "^3.5.0"
+scipy = "^1.8.0"  # Para filtros e FFT
+pyqt5 = "^5.15.6" # Para a GUI
+
+[tool.poetry.dev-dependencies]
+black = "^22.3.0"
+flake8 = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

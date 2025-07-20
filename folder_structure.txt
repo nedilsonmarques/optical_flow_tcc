@@ -1,0 +1,23 @@
+optical_flow_tcc/
+├── main.py                     # Ponto de entrada
+├── gui/
+│   ├── __init__.py
+│   ├── main_window.py          # GUI principal com 3 painéis (imagem, velocidade, FFT)
+│   ├── settings_dialog.py      # Configurações de processamento
+│   └── calibration_dialog.py   # Diálogo de calibração
+├── processing/
+│   ├── __init__.py
+│   ├── flow_calculators.py     # Lucas-Kanade, Farneback, etc.
+│   ├── filters.py              # Filtros temporais
+│   ├── spectral_analysis.py    # Cálculo de FFT
+│   └── coordinate_conversion.py# Conversão pixels ↔ arcsec
+├── control/
+│   ├── __init__.py
+│   ├── telescope_controller.py # Interface Meade LXD55
+│   └── pid_controller.py       # Lógica de correção
+├── utils/
+│   ├── __init__.py
+│   ├── timing.py               # SMPTE, sincronismo
+│   ├── plotting.py             # Gráficos dinâmicos
+│   └── calibration.py          # Rotinas de calibração
+└── pyproject.toml              # Dependências com Poetry
