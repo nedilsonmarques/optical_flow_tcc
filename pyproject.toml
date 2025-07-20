@@ -3,7 +3,7 @@ name = "optical_flow_tcc"
 version = "0.1.0"
 description = "Sistema de controle para montagem equatorial com análise de fluxo ótico"
 authors = [
-    {name = "Nedilson Aparecido Marques",email = "nedilsonmarques@gmail.com"}
+    "Nedilson Aparecido Marques"
 ]
 
 [tool.poetry.dependencies]
