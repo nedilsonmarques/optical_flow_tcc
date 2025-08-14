@@ -9,24 +9,35 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from scipy.signal import detrend, find_peaks
 
-# --- Configurações e Setup de Gráficos (Inalterado) ---
+# --- Configurações ---
 PLOT_UPDATE_SECONDS = 1.0
 MOVING_AVERAGE_WINDOW_SHORT = 30
 MOVING_AVERAGE_WINDOW_LONG = 300
 OUTLIER_STD_DEV_THRESHOLD = 3.0 
 FFT_PEAK_MIN_HEIGHT = 0.01
 FFT_PEAK_MIN_PROMINENCE = 0.01
-SIDEREAL_RATE_ARCSEC_S = 15.04108
+
+# --- Constantes Físicas da Montagem ---
+WORM_GEAR_TEETH = 144
+SIDEREAL_DAY_S = 86164.09
 SPEED_FACTOR = 4.0
-THEORETICAL_SPEED_ARCSEC_S = SIDEREAL_RATE_ARCSEC_S * SPEED_FACTOR
+FUNDAMENTAL_FREQ_HZ = WORM_GEAR_TEETH / SIDEREAL_DAY_S
+EXPECTED_PEAK_FREQ_HZ = FUNDAMENTAL_FREQ_HZ * SPEED_FACTOR
+THEORETICAL_SPEED_ARCSEC_S = 15.04108 * SPEED_FACTOR
+
+# --- Estruturas de Dados ---
 time_data = []
 speed_data_raw_px_s = []
 position_total_px = 0.0
 calibration_factor_K = 0.0
-peak_annotations_auto = []
-peak_annotations_fixed = []
+peak_annotations_wide = []
+peak_annotations_zoom = []
+harmonic_lines_wide = []
+harmonic_lines_zoom = []
+
+# --- Setup dos Gráficos Interativos ---
 plt.ion()
-fig, (ax_speed, ax_fft_auto, ax_fft_fixed) = plt.subplots(3, 1, figsize=(12, 12), sharex=False)
+fig, (ax_speed, ax_fft_wide, ax_fft_zoom) = plt.subplots(3, 1, figsize=(12, 12), sharex=False)
 fig.tight_layout(pad=3.0)
 ax_speed.set_title('Velocidade Sideral Equivalente (1x) vs. Tempo')
 ax_speed.set_ylabel('Velocidade (arcsec/s @ 1x)')
@@ -36,23 +47,22 @@ line_smooth_short, = ax_speed.plot([], [], '-', color='darkorange', linewidth=2,
 line_smooth_long, = ax_speed.plot([], [], '-', color='crimson', linewidth=2, label=f'Média Móvel ({MOVING_AVERAGE_WINDOW_LONG} pontos)')
 line_global_avg, = ax_speed.plot([], [], '--', color='cyan', linewidth=2, label='Média Global (Estável)')
 ax_speed.legend()
-ax_fft_auto.set_title('Análise de Frequência (FFT) - Escala Automática')
-ax_fft_auto.set_ylabel('Amplitude (arcsec/s @ 1x)')
-ax_fft_auto.set_xlabel('Frequência (Hz)')
-ax_fft_auto.grid(True)
-line_fft_auto, = ax_fft_auto.plot([], [], '-', color='steelblue', linewidth=1, label='Espectro (Auto)')
-peak_markers_auto, = ax_fft_auto.plot([], [], 'x', color='red', markersize=8, label='Picos Detectados')
-ax_fft_auto.legend()
-ax_fft_auto.set_xlim(0, 0.02)
-ax_fft_fixed.set_title('Análise de Frequência (FFT) - Região de Interesse')
-ax_fft_fixed.set_xlabel('Frequência (Hz)')
-ax_fft_fixed.set_ylabel('Amplitude (arcsec/s @ 1x)')
-ax_fft_fixed.grid(True)
-line_fft_fixed, = ax_fft_fixed.plot([], [], '-', color='darkviolet', linewidth=1, label='Espectro (Fixo)')
-peak_markers_fixed, = ax_fft_fixed.plot([], [], 'x', color='red', markersize=8)
-ax_fft_fixed.legend()
-ax_fft_fixed.set_xlim(0, 0.02)
-ax_fft_fixed.set_ylim(0, 0.5 / SPEED_FACTOR)
+ax_fft_wide.set_title('Análise de Frequência (FFT) - Visão Ampla')
+ax_fft_wide.set_ylabel('Amplitude (arcsec/s @ 1x)')
+ax_fft_wide.set_xlabel('Frequência (Hz)')
+ax_fft_wide.grid(True)
+line_fft_wide, = ax_fft_wide.plot([], [], '-', color='steelblue', linewidth=1, label='Espectro (Amplo)')
+peak_markers_wide, = ax_fft_wide.plot([], [], 'x', color='red', markersize=8, label='Picos Detectados')
+ax_fft_wide.legend()
+ax_fft_wide.set_xlim(0, 16 * EXPECTED_PEAK_FREQ_HZ)
+ax_fft_zoom.set_title('Análise de Frequência (FFT) - Pico Principal')
+ax_fft_zoom.set_xlabel('Frequência (Hz)')
+ax_fft_zoom.set_ylabel('Amplitude (arcsec/s @ 1x)')
+ax_fft_zoom.grid(True)
+line_fft_zoom, = ax_fft_zoom.plot([], [], '-', color='darkviolet', linewidth=1, label='Espectro (Zoom)')
+peak_markers_zoom, = ax_fft_zoom.plot([], [], 'x', color='red', markersize=8)
+ax_fft_zoom.legend()
+ax_fft_zoom.set_xlim(0, 2 * EXPECTED_PEAK_FREQ_HZ)
 camera = None
 
 def get_image_from_camera():
@@ -64,7 +74,6 @@ def get_image_from_camera():
     return frame
 
 def draw_flow(image_np, flow_tensor, magnitude_threshold=0.5):
-    # (Função inalterada)
     vis = image_np.copy()
     flow_np = flow_tensor.cpu().numpy().transpose(1, 2, 0)
     h, w = image_np.shape[:2]; step = 16
@@ -79,20 +88,23 @@ def draw_flow(image_np, flow_tensor, magnitude_threshold=0.5):
     return vis
 
 def update_plot():
-    global calibration_factor_K, peak_annotations_auto, peak_annotations_fixed
+    global calibration_factor_K, peak_annotations_wide, peak_annotations_zoom, harmonic_lines_wide, harmonic_lines_zoom
     if not time_data: return
 
     np_speed_data_px_s = np.array(speed_data_raw_px_s)
     np_time_data = np.array(time_data)
     np_speed_data_arcsec_s = np_speed_data_px_s * calibration_factor_K
+    # CORRIGIDO: Usa a constante local SPEED_FACTOR em vez de config.SPEED_FACTOR
     np_speed_data_normalized = np_speed_data_arcsec_s / SPEED_FACTOR
 
     if len(np_speed_data_normalized) >= MOVING_AVERAGE_WINDOW_SHORT:
+        # CORRIGIDO: Usa a constante local
         moving_avg_short = np.convolve(np_speed_data_normalized, np.ones(MOVING_AVERAGE_WINDOW_SHORT), 'valid') / MOVING_AVERAGE_WINDOW_SHORT
         time_for_avg_short = np_time_data[MOVING_AVERAGE_WINDOW_SHORT-1:]
         line_smooth_short.set_data(time_for_avg_short, moving_avg_short)
 
     if len(np_speed_data_normalized) >= MOVING_AVERAGE_WINDOW_LONG:
+        # CORRIGIDO: Usa a constante local
         moving_avg_long = np.convolve(np_speed_data_normalized, np.ones(MOVING_AVERAGE_WINDOW_LONG), 'valid') / MOVING_AVERAGE_WINDOW_LONG
         time_for_avg_long = np_time_data[MOVING_AVERAGE_WINDOW_LONG-1:]
         line_smooth_long.set_data(time_for_avg_long, moving_avg_long)
@@ -101,10 +113,7 @@ def update_plot():
         line_global_avg.set_data(time_for_avg_long, global_avg_values)
         
         if len(moving_avg_long) > 1:
-            # --- MODIFICADO: Ordem das operações corrigida ---
-            # 1. Primeiro, remove a tendência (Detrending)
             signal_sem_tendencia = detrend(moving_avg_long)
-            # 2. Depois, aplica a janela ao sinal já sem tendência
             window = np.hanning(len(signal_sem_tendencia))
             signal_final = signal_sem_tendencia * window
             
@@ -112,17 +121,19 @@ def update_plot():
             T = (time_for_avg_long[-1] - time_for_avg_long[0]) / (N - 1) if N > 1 else 1.0
             yf = np.abs(np.fft.rfft(signal_final)) / N * 2; yf[0] /= 2
             xf = np.fft.rfftfreq(N, T)
-            line_fft_auto.set_data(xf, yf)
-            line_fft_fixed.set_data(xf, yf)
+            
+            line_fft_wide.set_data(xf, yf)
+            line_fft_zoom.set_data(xf, yf)
 
-            for ann in peak_annotations_auto: ann.remove()
-            for ann in peak_annotations_fixed: ann.remove()
-            peak_annotations_auto.clear(); peak_annotations_fixed.clear()
-
+            for ann in peak_annotations_wide: ann.remove()
+            for ann in peak_annotations_zoom: ann.remove()
+            peak_annotations_wide.clear(); peak_annotations_zoom.clear()
+            
+            # CORRIGIDO: Usa as constantes locais
             peaks, _ = find_peaks(yf, height=FFT_PEAK_MIN_HEIGHT, prominence=FFT_PEAK_MIN_PROMINENCE)
             peak_freqs = xf[peaks]; peak_amps = yf[peaks]
-            peak_markers_auto.set_data(peak_freqs, peak_amps)
-            peak_markers_fixed.set_data(peak_freqs, peak_amps)
+            peak_markers_wide.set_data(peak_freqs, peak_amps)
+            peak_markers_zoom.set_data(peak_freqs, peak_amps)
             
             print("--- Picos FFT Detectados (Freq[Hz], Ampl[arcsec/s @ 1x]) ---")
             if len(peak_freqs) > 0:
@@ -132,19 +143,33 @@ def update_plot():
 
             for freq, amp in zip(peak_freqs, peak_amps):
                 text = f"({freq:.4f}, {amp:.3f})"
-                ann_auto = ax_fft_auto.annotate(text, (freq, amp), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
-                peak_annotations_auto.append(ann_auto)
-                ann_fixed = ax_fft_fixed.annotate(text, (freq, amp), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9, color='darkviolet')
-                peak_annotations_fixed.append(ann_fixed)
+                ann_wide = ax_fft_wide.annotate(text, (freq, amp), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9)
+                peak_annotations_wide.append(ann_wide)
+                ann_zoom = ax_fft_zoom.annotate(text, (freq, amp), textcoords="offset points", xytext=(0,10), ha='center', fontsize=9, color='darkviolet')
+                peak_annotations_zoom.append(ann_zoom)
 
+            for line in harmonic_lines_wide: line.remove()
+            for line in harmonic_lines_zoom: line.remove()
+            harmonic_lines_wide.clear(); harmonic_lines_zoom.clear()
+            for i in range(1, 20):
+                # CORRIGIDO: Usa a constante local
+                harmonic_freq = i * EXPECTED_PEAK_FREQ_HZ
+                is_fundamental = (i == 1)
+                if harmonic_freq < ax_fft_wide.get_xlim()[1]:
+                    line = ax_fft_wide.axvline(x=harmonic_freq, color='green' if is_fundamental else 'gray', linestyle='-' if is_fundamental else '--', linewidth=0.8, zorder=0)
+                    harmonic_lines_wide.append(line)
+                if harmonic_freq < ax_fft_zoom.get_xlim()[1]:
+                    line = ax_fft_zoom.axvline(x=harmonic_freq, color='green' if is_fundamental else 'gray', linestyle='-' if is_fundamental else '--', linewidth=0.8, zorder=0)
+                    harmonic_lines_zoom.append(line)
+    
     ax_speed.relim(); ax_speed.autoscale_view(True, True, True)
-    ax_fft_auto.relim(); ax_fft_auto.autoscale_view(scalex=False, scaley=True)
+    ax_fft_wide.relim(); ax_fft_wide.autoscale_view(scalex=False, scaley=True)
+    ax_fft_zoom.relim(); ax_fft_zoom.autoscale_view(scalex=False, scaley=True)
     fig.canvas.draw_idle()
     fig.canvas.flush_events()
 
 
 def process_video_feed_with_raft():
-    # (Lógica principal inalterada)
     print("Configurando o dispositivo e o modelo RAFT...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"--- Processando no dispositivo: {device.upper()} ---")
@@ -183,6 +208,7 @@ def process_video_feed_with_raft():
         
         is_outlier = False
         if len(speed_data_raw_px_s) > MOVING_AVERAGE_WINDOW_SHORT:
+            # CORRIGIDO: Usa a constante local
             global_mean = np.mean(speed_data_raw_px_s); global_std = np.std(speed_data_raw_px_s)
             upper_threshold = global_mean + OUTLIER_STD_DEV_THRESHOLD * global_std
             lower_threshold = max(0, global_mean - OUTLIER_STD_DEV_THRESHOLD * global_std)
@@ -195,8 +221,10 @@ def process_video_feed_with_raft():
             position_total_px += current_speed_px_s * delta_time_s
             
             if len(speed_data_raw_px_s) >= MOVING_AVERAGE_WINDOW_LONG:
+                # CORRIGIDO: Usa a constante local
                 latest_global_avg_px_s = np.mean(np.convolve(speed_data_raw_px_s, np.ones(MOVING_AVERAGE_WINDOW_LONG), 'valid') / MOVING_AVERAGE_WINDOW_LONG)
                 if latest_global_avg_px_s > 0:
+                    # CORRIGIDO: Usa a constante local
                     calibration_factor_K = THEORETICAL_SPEED_ARCSEC_S / latest_global_avg_px_s
         
         if time.time() - last_plot_update > PLOT_UPDATE_SECONDS:
@@ -205,6 +233,7 @@ def process_video_feed_with_raft():
         
         speed_now_arcsec_s = current_speed_px_s * calibration_factor_K
         position_total_arcsec = position_total_px * calibration_factor_K
+        # CORRIGIDO: Usa a constante local
         speed_now_normalized = speed_now_arcsec_s / SPEED_FACTOR
         
         visualization = draw_flow(current_frame_np, predicted_flow[0])

@@ -1,0 +1,25 @@
+# Arquivo .gitignore para o projeto de análise da montagem
+
+# Ambiente Virtual
+.venv/
+venv/
+env/
+
+# Cache e arquivos compilados do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pastas de IDEs
+.vscode/
+.idea/
+
+# Arquivos de build e distribuição
+build/
+dist/
+*.egg-info/
+
+# Arquivos de teste
+.pytest_cache/
+.coverage
