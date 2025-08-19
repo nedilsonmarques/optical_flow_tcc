@@ -1,0 +1,15 @@
+{
+    "start_time_utc": "2025-08-19T02:28:23.436621",
+    "mode": "Offline Files",
+    "image_folder": "D:\\RAFT\\sessions\\session_2025-08-17_11-11-55\\images\\",
+    "worm_gear_teeth": 144,
+    "speed_factor": 4.0,
+    "capture_fps": 2.9972857205718175,
+    "maf_short_points": 29,
+    "maf_long_points": 149,
+    "session_id": "2025-08-18_23-28-23",
+    "end_time_utc": "2025-08-19T02:32:41.188192",
+    "total_valid_frames_processed": 1106,
+    "total_frames_saved": 0,
+    "total_outliers_rejected": 0
+}

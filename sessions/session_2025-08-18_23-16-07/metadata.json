@@ -1,0 +1,15 @@
+{
+    "start_time_utc": "2025-08-19T02:16:07.660031",
+    "mode": "Offline Files",
+    "image_folder": "D:\\TCC\\tcc\\cap_img\\",
+    "worm_gear_teeth": 144,
+    "speed_factor": 4.0,
+    "capture_fps": 131.16649379232916,
+    "maf_short_points": 1311,
+    "maf_long_points": 6558,
+    "session_id": "2025-08-18_23-16-07",
+    "end_time_utc": "2025-08-19T02:16:41.910959",
+    "total_valid_frames_processed": 171,
+    "total_frames_saved": 0,
+    "total_outliers_rejected": 0
+}

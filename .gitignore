@@ -23,3 +23,7 @@ dist/
 # Arquivos de teste
 .pytest_cache/
 .coverage
+
+# Arquivos de sessão
+sessions/*/images/
+

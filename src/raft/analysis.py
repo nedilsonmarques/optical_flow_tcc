@@ -9,16 +9,14 @@ def process_analysis_data(time_data, speed_data_raw_px_s, calibration_factor_K, 
     Executa todos os cálculos de análise sobre os dados brutos.
     Recebe os tamanhos de janela de filtro como argumentos.
     """
-    # Se os filtros ainda não foram inicializados, não faz nada
-    if not time_data or not maf_long_points:
+    # Checagem robusta que funciona para listas e arrays
+    if len(time_data) == 0 or maf_long_points is None or len(speed_data_raw_px_s) < maf_long_points:
         return None
 
-    # Garante que temos dados suficientes para o maior filtro
-    if len(speed_data_raw_px_s) < maf_long_points:
-        return None
-
+    # Garante que os dados sejam arrays numpy para os cálculos
     np_speed_data_px_s = np.array(speed_data_raw_px_s)
     np_time_data = np.array(time_data)
+    
     np_speed_data_arcsec_s = np_speed_data_px_s * calibration_factor_K
     np_speed_data_normalized = np_speed_data_arcsec_s / config.SPEED_FACTOR
     
@@ -35,15 +33,26 @@ def process_analysis_data(time_data, speed_data_raw_px_s, calibration_factor_K, 
     
     N = len(signal_final)
     T = (time_for_avg_long[-1] - time_for_avg_long[0]) / (N - 1) if N > 1 else 1.0
-    yf = np.abs(np.fft.rfft(signal_final)) / N * 2; yf[0] /= 2
+    yf = np.abs(np.fft.rfft(signal_final)) / N * 2
+    if len(yf) > 0:
+        yf[0] = yf[0] / 2
+    
     xf = np.fft.rfftfreq(N, T)
     
-    peaks, _ = find_peaks(yf, height=config.FFT_PEAK_MIN_HEIGHT, prominence=config.FFT_PEAK_MIN_PROMINENCE)
+    all_peaks, properties = find_peaks(yf, height=config.FFT_PEAK_MIN_HEIGHT, prominence=config.FFT_PEAK_MIN_PROMINENCE)
     
+    top_n_peak_indices = np.array([], dtype=int)
+    if all_peaks.size > 0:
+        peak_prominences = properties['prominences']
+        peak_data = sorted(zip(all_peaks, peak_prominences), key=lambda x: x[1], reverse=True)
+        top_n_peaks_unorded = [index for index, prominence in peak_data[:config.FFT_MAX_PEAKS_TO_DISPLAY]]
+        top_n_peak_indices = np.sort(top_n_peaks_unorded)
+
     results = {
         "time_for_avg_short": time_for_avg_short, "moving_avg_short": moving_avg_short,
         "time_for_avg_long": time_for_avg_long, "moving_avg_long": moving_avg_long,
         "global_avg_values": global_avg_values, "fft_freqs": xf,
-        "fft_amps": yf, "peak_indices": peaks
+        "fft_amps": yf, 
+        "peak_indices": top_n_peak_indices
     }
     return results
