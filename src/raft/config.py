@@ -32,4 +32,4 @@ THEORETICAL_SPEED_ARCSEC_S = 15.04108 * SPEED_FACTOR
 
 # --- Configurações de Análise Offline ---
 # Coloque aqui o caminho para o arquivo CSV da sessão que você quer analisar.
-SESSION_CSV_PATH = "D:\\RAFT\\sessions\\session_2025-08-17_11-11-55\\data.csv"
+SESSION_CSV_PATH = "D:\\RAFT\\sessions\\session_2025-08-18_23-33-32\\data.csv"

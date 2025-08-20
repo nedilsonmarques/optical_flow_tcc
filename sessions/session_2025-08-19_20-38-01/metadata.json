@@ -1,5 +1,5 @@
 {
-    "start_time_utc": "2025-08-19T02:33:32.051507",
+    "start_time_utc": "2025-08-19T23:38:01.501946",
     "mode": "Offline Files",
     "image_folder": "D:\\RAFT\\sessions\\session_2025-08-17_11-11-55\\images\\",
     "worm_gear_teeth": 144,
@@ -7,9 +7,9 @@
     "capture_fps": 2.9972857205746863,
     "maf_short_points": 29,
     "maf_long_points": 149,
-    "session_id": "2025-08-18_23-33-32",
-    "end_time_utc": "2025-08-19T08:25:46.505028",
-    "total_valid_frames_processed": 65434,
+    "session_id": "2025-08-19_20-38-01",
+    "end_time_utc": "2025-08-19T23:38:39.116903",
+    "total_valid_frames_processed": 189,
     "total_frames_saved": 0,
-    "total_outliers_rejected": 263
+    "total_outliers_rejected": 0
 }
