@@ -1,21 +1,12 @@
 # Análise de Erro Periódico de Montagem Equatorial com Fluxo Óptico
-# Periodic Error Analysis of Equatorial Mount with Optical Flow
 
-[Português]
+[![English](https://img.shields.io/badge/English-README-blue.svg)](README.en.md)
 
 Este projeto utiliza técnicas de visão computacional, especificamente o fluxo óptico, para medir e analisar com alta precisão o erro periódico e outras anomalias de movimento no eixo de Ascenção Reta (RA) de uma montagem de telescópio.
 
 O sistema foi desenvolvido para caracterizar uma montagem Meade LXD55, usando um microscópio USB para capturar imagens de uma superfície acoplada ao eixo RA. Os dados de movimento são processados em tempo real para fornecer uma análise detalhada da performance da montagem em unidades físicas (arcosegundos).
 
-[English]
-
-This project uses computer vision techniques, specifically optical flow, to measure and analyze with high precision the periodic error and other motion anomalies in the Right Ascension (RA) axis of a telescope mount.
-
-The system was developed to characterize a Meade LXD55 mount, using a USB microscope to capture images of a surface attached to the RA axis. Motion data is processed in real-time to provide a detailed analysis of the mount's performance in physical units (arcseconds).
-
-## Funcionalidades | Features
-
-[Português]
+## Funcionalidades
 
 * **Medição de Deslocamento:** Utiliza o algoritmo de fluxo óptico de última geração **RAFT** (via PyTorch) com aceleração por GPU (CUDA) para medições de sub-pixel.
 * **Análise em Tempo Real:** Calcula velocidade, posição e aplica filtros estatísticos para rejeição de outliers.
@@ -25,19 +16,7 @@ The system was developed to characterize a Meade LXD55 mount, using a USB micros
 * **Gerenciamento de Sessão:** Salva automaticamente todos os dados brutos (imagens e CSV de velocidade) e metadados (parâmetros de análise) em pastas de sessão únicas para cada execução.
 * **Análise Offline:** Inclui um script para carregar, reprocessar e analisar sessões de dados previamente salvas.
 
-[English]
-
-* **Displacement Measurement:** Uses the state-of-the-art optical flow algorithm **RAFT** (via PyTorch) with GPU acceleration (CUDA) for sub-pixel measurements.
-* **Real-Time Analysis:** Calculates velocity, position, and applies statistical filters for outlier rejection.
-* **Advanced Frequency Analysis:** Applies a signal processing chain (Detrending, Hanning Window) to generate a clean Frequency Spectrum (FFT), identifying the components of the periodic error.
-* **Dynamic Visualization:** Presents data in a dashboard with multiple charts (Velocity vs. Time, FFT, etc.) using Matplotlib.
-* **Physical Calibration:** Converts measurements from `pixels/s` to `arcseconds/s` through automatic calibration based on the theoretical speed of the mount.
-* **Session Management:** Automatically saves all raw data (images and velocity CSV) and metadata (analysis parameters) in unique session folders for each run.
-* **Offline Analysis:** Includes a script to load, reprocess, and analyze previously saved data sessions.
-
-## Estrutura do Projeto | Project Structure
-
-[Português]
+## Estrutura do Projeto
 
 O código foi refatorado em uma arquitetura modular para maior clareza e manutenibilidade, localizado em `src/raft/`.
 
@@ -48,32 +27,13 @@ O código foi refatorado em uma arquitetura modular para maior clareza e manuten
 * **`main_live.py`**: Ponto de entrada para a **aquisição de dados** (seja da câmera ao vivo ou do reprocessamento de uma pasta de imagens). Orquestra os outros módulos para capturar, analisar, visualizar e salvar os dados em tempo real.
 * **`main_offline.py`**: Ponto de entrada para a **análise de dados já salvos**. Carrega um arquivo `data.csv` de uma sessão anterior e gera os gráficos finais.
 
-[English]
+## Instalação e Execução
 
-The code has been refactored into a modular architecture for greater clarity and maintainability, located in `src/raft/`.
-
-* **`config.py`**: Central file for all constants and configuration parameters, such as file paths, physical mount parameters, and analysis thresholds.
-* **`session_manager.py`**: Module responsible for creating and managing capture sessions. Handles folder creation, saving metadata (`metadata.json`), velocity data (`data.csv`), and images.
-* **`analysis.py`**: The "brain" of the analysis. Contains all numerical processing logic (moving averages, FFT, peak detection, etc.). Has no visualization code.
-* **`visualization.py`**: Responsible for all visual output. Creates and updates Matplotlib charts and draws the information frame (HUD) on the OpenCV video.
-* **`main_live.py`**: Entry point for **data acquisition** (either from the live camera or reprocessing an image folder). Orchestrates the other modules to capture, analyze, visualize, and save data in real-time.
-* **`main_offline.py`**: Entry point for **analysis of already saved data**. Loads a `data.csv` file from a previous session and generates the final charts.
-
-## Instalação e Execução | Installation and Execution
-
-### 1. Requisitos | Requirements
-
-[Português]
+### 1. Requisitos
 
 O projeto utiliza Python 3.11+. As dependências estão listadas no arquivo `requirements.txt`.
 
-[English]
-
-The project uses Python 3.11+. Dependencies are listed in the `requirements.txt` file.
-
-### 2. Configuração do Ambiente | Environment Setup
-
-[Português]
+### 2. Configuração do Ambiente
 
 É altamente recomendado usar um ambiente virtual.
 
@@ -91,27 +51,7 @@ python -m venv .venv
 # source .venv/bin/activate
 ```
 
-[English]
-
-It is highly recommended to use a virtual environment.
-
-```bash
-# 1. Navigate to the project root folder (D:\RAFT)
-cd D:\RAFT
-
-# 2. Create a virtual environment
-python -m venv .venv
-
-# 3. Activate the virtual environment
-# On Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-# On Linux/macOS:
-# source .venv/bin/activate
-```
-
-### 3. Instalação das Dependências | Installing Dependencies
-
-[Português]
+### 3. Instalação das Dependências
 
 Com o ambiente ativado, instale os pacotes necessários:
 
@@ -120,18 +60,7 @@ pip install -r requirements.txt
 ```
 **Nota:** O arquivo `requirements.txt` está configurado para instalar a versão do PyTorch com suporte a **CUDA 12.1**. Certifique-se de que seus drivers NVIDIA sejam compatíveis.
 
-[English]
-
-With the environment activated, install the necessary packages:
-
-```bash
-pip install -r requirements.txt
-```
-**Note:** The `requirements.txt` file is configured to install the PyTorch version with **CUDA 12.1** support. Make sure your NVIDIA drivers are compatible.
-
-### 4. Execução | Execution
-
-[Português]
+### 4. Execução
 
 Todos os scripts devem ser executados como módulos a partir da pasta raiz do projeto (`D:\RAFT`).
 
@@ -145,24 +74,6 @@ Todos os scripts devem ser executados como módulos a partir da pasta raiz do pr
 * **Para Análise de um CSV Salvo:**
     * Configure o caminho do arquivo em `src/raft/config.py` (variável `SESSION_CSV_PATH`).
     * Execute o comando:
-    ```bash
-    python -m src.raft.main_offline
-    ```
-
-[English]
-
-All scripts should be executed as modules from the project root folder (`D:\RAFT`).
-
-* **For Real-Time Analysis (Camera or Image Folder):**
-    * Configure the desired parameters in `src/raft/config.py` (`USE_LIVE_CAMERA`, `IMAGE_FOLDER_PATH`, etc.).
-    * Run the command:
-    ```bash
-    python -m src.raft.main_live
-    ```
-
-* **For Analysis of a Saved CSV:**
-    * Configure the file path in `src/raft/config.py` (variable `SESSION_CSV_PATH`).
-    * Run the command:
     ```bash
     python -m src.raft.main_offline
     ```
